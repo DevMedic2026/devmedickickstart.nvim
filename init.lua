@@ -305,19 +305,23 @@ do
   -- change the command under that to load whatever the name of that colorscheme is.
   --
   -- If you want to see what colorschemes are already installed, you can use `:Telescope colorscheme`.
-  vim.pack.add { gh 'folke/tokyonight.nvim' }
-  ---@diagnostic disable-next-line: missing-fields
-  require('tokyonight').setup {
-    styles = {
-      comments = { italic = false }, -- Disable italics in comments
-      variables = { italic = false },
+  vim.pack.add { gh 'ellisonleao/gruvbox.nvim' }
+
+  vim.o.background = 'dark'
+
+  require('gruvbox').setup {
+    contrast = 'hard',
+
+    italic = {
+      strings = false,
+      emphasis = false,
+      comments = false,
+      operators = false,
+      folds = false,
     },
   }
 
-  -- Load the colorscheme here.
-  -- Like many other themes, this one has different styles, and you could load
-  -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-  vim.cmd.colorscheme 'tokyonight-night'
+  vim.cmd.colorscheme 'gruvbox'
 
   local no_italic_groups = {
     '@variable',
@@ -923,7 +927,7 @@ do
   require 'kickstart.plugins.indent_line'
   require 'kickstart.plugins.lint'
   require 'kickstart.plugins.autopairs'
-  -- require 'kickstart.plugins.neo-tree'
+  require 'kickstart.plugins.neo-tree'
   require 'kickstart.plugins.gitsigns' -- adds gitsigns recommended keymaps
 
   -- NOTE: You can add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
@@ -934,3 +938,29 @@ end
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
+
+vim.pack.add {
+  -- your other plugins...
+
+  { src = 'https://github.com/RRethy/base16-nvim' },
+}
+
+local ok, matugen = pcall(require, 'matugen')
+if ok then matugen.setup() end
+
+local function remove_italics()
+  for _, group in ipairs(vim.fn.getcompletion('', 'highlight')) do
+    local ok, hl = pcall(vim.api.nvim_get_hl, 0, { name = group, link = false })
+
+    if ok and hl.italic then
+      hl.italic = false
+      vim.api.nvim_set_hl(0, group, hl)
+    end
+  end
+end
+
+vim.api.nvim_create_autocmd('ColorScheme', {
+  callback = remove_italics,
+})
+
+remove_italics()
