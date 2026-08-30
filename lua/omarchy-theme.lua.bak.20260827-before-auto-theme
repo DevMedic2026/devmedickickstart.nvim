@@ -1,0 +1,118 @@
+-- Apply the current Omarchy theme's Neovim palette.
+-- Source of truth: ~/.local/state/omarchy/current/theme/neovim.lua
+-- aether.nvim also watches that file and hot-reloads on `omarchy theme set`.
+
+local M = {}
+
+local OMARCHY_THEME_PATHS = {
+  vim.fn.expand '~/.local/state/omarchy/current/theme/neovim.lua',
+  vim.fn.expand '~/.config/omarchy/current/theme/neovim.lua',
+}
+
+local function theme_path()
+  for _, path in ipairs(OMARCHY_THEME_PATHS) do
+    if vim.fn.filereadable(path) == 1 then
+      return path
+    end
+  end
+end
+
+local function plugin_name(entry)
+  if type(entry) ~= 'table' then
+    return nil
+  end
+  local name = entry[1] or entry.name
+  if type(name) == 'string' then
+    return name
+  end
+end
+
+local function is_aether_entry(entry)
+  local name = plugin_name(entry)
+  return name and name:find('aether', 1, true) ~= nil
+end
+
+local function colorscheme_from_spec(spec)
+  if type(spec) ~= 'table' then
+    return nil
+  end
+  for _, entry in ipairs(spec) do
+    local name = plugin_name(entry)
+    if name and name:find('LazyVim', 1, true) then
+      if type(entry.opts) == 'table' and type(entry.opts.colorscheme) == 'string' then
+        return entry.opts.colorscheme
+      end
+    end
+  end
+end
+
+local function telescope_highlights(hl, c)
+  hl.TelescopePromptPrefix = { fg = c.cyan }
+  hl.TelescopeSelectionCaret = { fg = c.cyan, bg = c.lighter_bg }
+  hl.TelescopeMatching = { fg = c.cyan, bold = true }
+  hl.TelescopePromptTitle = { fg = c.bg, bg = c.cyan, bold = true }
+  hl.TelescopePreviewTitle = { fg = c.bg, bg = c.blue, bold = true }
+  hl.TelescopeResultsTitle = { fg = c.bg, bg = c.red, bold = true }
+end
+
+local function with_telescope_highlights(opts)
+  opts = vim.tbl_deep_extend('force', {}, opts or {})
+  local user_on_highlights = opts.on_highlights
+  opts.on_highlights = function(hl, c)
+    if user_on_highlights then
+      user_on_highlights(hl, c)
+    end
+    telescope_highlights(hl, c)
+  end
+  return opts
+end
+
+local function apply_aether(opts)
+  require('aether').setup(with_telescope_highlights(opts))
+  vim.cmd.colorscheme 'aether'
+end
+
+function M.setup()
+  vim.o.termguicolors = true
+
+  local path = theme_path()
+  local spec
+  if path then
+    local ok, loaded = pcall(dofile, path)
+    if ok then
+      spec = loaded
+    else
+      vim.notify('omarchy-theme: failed to load ' .. path, vim.log.levels.WARN)
+    end
+  end
+
+  if type(spec) == 'table' then
+    for _, entry in ipairs(spec) do
+      if is_aether_entry(entry) then
+        apply_aether(entry.opts or {})
+        return
+      end
+    end
+
+    local name = colorscheme_from_spec(spec)
+    if name then
+      local ok = pcall(vim.cmd.colorscheme, name)
+      if ok then
+        return
+      end
+      vim.notify(
+        ('omarchy-theme: colorscheme %s is not installed; using aether'):format(name),
+        vim.log.levels.WARN
+      )
+    end
+  end
+
+  apply_aether {
+    styles = {
+      comments = { italic = false },
+      keywords = { italic = false },
+    },
+  }
+end
+
+return M

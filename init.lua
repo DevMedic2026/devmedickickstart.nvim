@@ -300,52 +300,13 @@ do
   }
 
   -- [[ Colorscheme ]]
-  -- You can easily change to a different colorscheme.
-  -- Change the name of the colorscheme plugin below, and then
-  -- change the command under that to load whatever the name of that colorscheme is.
-  --
-  -- If you want to see what colorschemes are already installed, you can use `:Telescope colorscheme`.
-  vim.pack.add { gh 'ellisonleao/gruvbox.nvim' }
-
-  vim.o.background = 'dark'
-
-  require('gruvbox').setup {
-    contrast = 'hard',
-
-    italic = {
-      strings = false,
-      emphasis = false,
-      comments = false,
-      operators = false,
-      folds = false,
-    },
-  }
-
-  vim.cmd.colorscheme 'gruvbox'
-
-  local no_italic_groups = {
-    '@variable',
-    '@variable.builtin',
-    '@variable.parameter',
-    '@variable.member',
-
-    '@type',
-    '@type.builtin',
-
-    '@keyword',
-
-    '@lsp.type.variable',
-    '@lsp.type.parameter',
-    '@lsp.type.property',
-    '@lsp.type.keyword',
-  }
-
-  for _, group in ipairs(no_italic_groups) do
-    vim.api.nvim_set_hl(0, group, {
-      italic = false,
-      update = true,
-    })
-  end
+  -- Follow the current Omarchy theme palette from
+  -- ~/.local/state/omarchy/current/theme/neovim.lua. aether.nvim also
+  -- hot-reloads that file when the theme changes.
+  vim.pack.add({
+    { src = gh 'bjarneo/aether.nvim', version = 'v3', name = 'aether' },
+  }, { confirm = false })
+  require('omarchy-theme').setup()
 
   -- Highlight todo, notes, etc in comments
   vim.pack.add { gh 'folke/todo-comments.nvim' }
@@ -945,8 +906,10 @@ vim.pack.add {
   { src = 'https://github.com/RRethy/base16-nvim' },
 }
 
-local ok, matugen = pcall(require, 'matugen')
-if ok then matugen.setup() end
+-- matugen.lua is a leftover wallpaper-reactive palette. The Omarchy theme
+-- drives the colorscheme via omarchy-theme.lua; leave this commented.
+-- local ok, matugen = pcall(require, 'matugen')
+-- if ok then matugen.setup() end
 
 local function remove_italics()
   for _, group in ipairs(vim.fn.getcompletion('', 'highlight')) do
